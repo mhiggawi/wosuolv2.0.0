@@ -1,0 +1,122 @@
+{
+  "name": "send qr using wasenderapi",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "confirm-rsvp-qr",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "31342044-47c1-412b-a36f-fba1fd86a617",
+      "name": "RSVP Response Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        16
+      ],
+      "webhookId": "your-unique-webhook-id-here"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\nfor (const item of $input.all()) {\n  const guestId = item.json.body.guest_id;\n  const phoneNumber = item.json.body.phone_number;\n  const guestName = item.json.body.guest_name || 'ضيف كريم';\n  const guestCount = item.json.body.guest_count || '1';\n  const eventTitle = item.json.body.event_title || 'دعوة حفل زفاف';\n\n  // استخدام QuickChart.io للحصول على QR Code مع تصميم احترافي\n  const qrData = encodeURIComponent(guestId);\n  const chartConfig = {\n    \"type\": \"qr\",\n    \"data\": guestId,\n    \"options\": {\n      \"width\": 300,\n      \"height\": 300,\n      \"margin\": 2,\n      \"dark\": \"000000\",\n      \"light\": \"ffffff\"\n    }\n  };\n  \n  const qrCodeImageUrl = `https://quickchart.io/qr?text=${qrData}&size=300&margin=2&dark=000000&light=ffffff`;\n\n  // بديل آخر باستخدام QR-Server مع خيارات متقدمة\n  const alternativeQrUrl = `https://api.qr-server.com/v1/create-qr-code/` +\n    `?size=350x350` +\n    `&data=${qrData}` +\n    `&bgcolor=ffffff` +\n    `&color=2d3748` +\n    `&qzone=1` +\n    `&format=png` +\n    `&ecc=M`;\n\n  // رسالة تأكيد مميزة\n  const qrCodeCaption = `🎊 *تم تأكيد حضورك بنجاح!*\\n\\n` +\n\n    `📱 *هذه بطاقة دخولك الشخصية*\\n` +\n    `🚪 يرجى إظهار هذا الرمز عند الدخول\\n\\n` +\n    `🏷️ رقم التذكرة: \\`${guestId}\\`\\n` +\n    `🌐 wosuol.com`;\n\n  items.push({\n    json: {\n      phoneNumber: phoneNumber,\n      qrCodeImageUrl: qrCodeImageUrl,\n      qrCodeCaption: qrCodeCaption\n    }\n  });\n}\nreturn items;"
+      },
+      "name": "Prepare QR Code Message1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        -16
+      ],
+      "id": "6ff99bfd-80e3-4cfa-a853-8d927c842e7c",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.wasenderapi.com/api/send-message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "={{ 'Bearer ' + '3b6fb31846efced862ef1c470879677e1f63f8a15786c435eacf1c8389bbd0f3' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.phoneNumber.replace('+', '') + '@s.whatsapp.net' }}"
+            },
+            {
+              "name": "imageUrl",
+              "value": "={{$json.qrCodeImageUrl}}"
+            },
+            {
+              "name": "text",
+              "value": "={{$json.qrCodeCaption}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "(Send QR Code)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        16
+      ],
+      "id": "7452db3e-102c-4a09-9f5b-8247ba310b5f"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RSVP Response Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare QR Code Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare QR Code Message1": {
+      "main": [
+        [
+          {
+            "node": "(Send QR Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1564dfef-e051-4e6b-8e84-9cad2ed3d9fe",
+  "meta": {
+    "instanceId": "ce7daeb9c2f91132081b0638c79eb9a8cd3df269edbdc0e9a9488d16112e48f0"
+  },
+  "id": "qJgB3CC6pa74FgY1",
+  "tags": []
+}
